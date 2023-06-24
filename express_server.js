@@ -40,8 +40,9 @@ app.get("/urls/new", (req, res) => {
 
 // creating new urls
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("Ok");
+  let newURL = generateRandomString();
+  urlDatabase[newURL] = req.body.longURL;
+  res.redirect(`/urls/${newURL}`);
 })
 
 // getting urls with specific id
@@ -49,6 +50,13 @@ app.get("/urls/:id", (req,res) => {
   let id = req.params.id;
   const templateVars = { id: id, longURL: urlDatabase[id] }
   res.render("urls_show", templateVars);
+})
+
+app.get("/u/:id", (req, res) => {
+ // let id = req.params.id;
+  //console.log(id);
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
 })
 
 // getting urls.json file
