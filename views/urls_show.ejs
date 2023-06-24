@@ -10,7 +10,7 @@
     />
     <title>URL - TinyApp Example</title>
   </head>
-
+  <%- include('partials/_header') %>
   <body>
     <div class="card text-center">
       <div class="card-header"></div>
@@ -19,12 +19,11 @@
         <p class="card-text">
           Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
         </p>
-        <p5 class="card-text">
-          New URL: <a href="#">New URL</a>
-        </p5>
       </div>
+      <div><a href="#">Shorten a new URL</a></div>
       <div class="card-footer text-muted"></div>
     </div>
+  
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
