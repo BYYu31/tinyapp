@@ -52,13 +52,19 @@ app.get("/urls/:id", (req,res) => {
   res.render("urls_show", templateVars);
 })
 
+// go to /u page with specific id
 app.get("/u/:id", (req, res) => {
- // let id = req.params.id;
-  //console.log(id);
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 })
 
+// get user login
+app.post("/login", (req, res) => {
+  res.cookie("username", req.body.username);
+  res.redirect("/urls");
+})
+
+// edit link
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   urlDatabase[id] = req.body.longURL;
@@ -66,6 +72,7 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 })
 
+// delete link
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id]
   res.redirect('/urls');
