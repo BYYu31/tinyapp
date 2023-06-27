@@ -24,6 +24,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const usersDatabase = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
 // home path
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -33,22 +46,42 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies["username"]
+    users: usersDatabase,
+    user_id: req.cookies['user_id']
   };
   res.render("urls_index", templateVars);
 })
 
 // getting new urls
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"]};
+  const templateVars = { 
+    users: usersDatabase, user_id: req.cookies['user_id']
+  };
   res.render("urls_new", templateVars);
 })
 
+// getting register link
 app.get("/register", (req, res) => {
-  // const templateVars = {
-  //   username: req.cookies["username"]
-  // }
-  res.render("email");
+  const templateVars = {
+    users: usersDatabase,
+    user_id: req.cookies['user_id']
+  }
+  res.render("urls_register", templateVars);
+})
+
+// post to register endpoint
+app.post("/register", (req, res) => {
+  let newID = generateRandomString();
+  res.cookie("user_id", newID);
+
+  // creates new user ID based on email and password
+  usersDatabase[newID] = {
+    id: newID,
+    email: req.body.email,
+    password: req.body.password
+  }
+  console.log(usersDatabase);
+  res.redirect("/urls");
 })
 
 // creating new urls
@@ -61,7 +94,12 @@ app.post("/urls", (req, res) => {
 // getting urls with specific id
 app.get("/urls/:id", (req,res) => {
   let id = req.params.id;
-  const templateVars = { id: id, longURL: urlDatabase[id], username: req.cookies["username"] };
+  const templateVars = { 
+    id: id,
+    longURL: urlDatabase[id],
+    users: usersDatabase,
+    user_id: req.cookies['user_id']  
+  };
   res.render("urls_show", templateVars);
 })
 
@@ -73,13 +111,12 @@ app.get("/u/:id", (req, res) => {
 
 // get user login
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
   res.redirect("/urls");
 })
 
 // logout and clear cookie
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 })
 
