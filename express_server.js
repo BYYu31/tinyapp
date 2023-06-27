@@ -44,6 +44,13 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 })
 
+app.get("/register", (req, res) => {
+  // const templateVars = {
+  //   username: req.cookies["username"]
+  // }
+  res.render("email");
+})
+
 // creating new urls
 app.post("/urls", (req, res) => {
   let newURL = generateRandomString();
