@@ -37,6 +37,16 @@ const usersDatabase = {
   },
 };
 
+// helper function - email lookup
+
+const emailLookUp = (email, dataBase) => {
+  for (let user in dataBase) {
+    if (dataBase[user].email === email) {
+      return dataBase[user];
+    }
+  }
+};
+
 // home path
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -44,81 +54,88 @@ app.get("/", (req, res) => {
 
 // urls path
 app.get("/urls", (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     urls: urlDatabase,
     users: usersDatabase,
     user_id: req.cookies['user_id']
   };
   res.render("urls_index", templateVars);
-})
+});
 
 // getting new urls
 app.get("/urls/new", (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     users: usersDatabase, user_id: req.cookies['user_id']
   };
   res.render("urls_new", templateVars);
-})
+});
 
 // getting register link
 app.get("/register", (req, res) => {
   const templateVars = {
     users: usersDatabase,
     user_id: req.cookies['user_id']
-  }
+  };
   res.render("urls_register", templateVars);
-})
+});
 
 // post to register endpoint
 app.post("/register", (req, res) => {
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send('Please provide valid email and password');
+  }
+  if (emailLookUp(req.body.email, usersDatabase)) {
+    return res.status(400).send(`${req.body.email} is in use.`);
+  }
   let newID = generateRandomString();
-  res.cookie("user_id", newID);
 
-  // creates new user ID based on email and password
+  // generate new ID
   usersDatabase[newID] = {
     id: newID,
     email: req.body.email,
     password: req.body.password
-  }
+  };
+
   console.log(usersDatabase);
-  res.redirect("/urls");
-})
+  res.cookie("user_id", newID).redirect("/urls");
+});
 
 // creating new urls
 app.post("/urls", (req, res) => {
   let newURL = generateRandomString();
   urlDatabase[newURL] = req.body.longURL;
   res.redirect(`/urls/${newURL}`);
-})
+});
 
 // getting urls with specific id
 app.get("/urls/:id", (req,res) => {
   let id = req.params.id;
-  const templateVars = { 
+  const templateVars = {
     id: id,
     longURL: urlDatabase[id],
     users: usersDatabase,
-    user_id: req.cookies['user_id']  
+    user_id: req.cookies['user_id']
   };
   res.render("urls_show", templateVars);
-})
+});
 
 // go to /u page with specific id
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
-})
+});
 
 // get user login
 app.post("/login", (req, res) => {
-  res.redirect("/urls");
-})
+  const user = emailLookUp(req.body.email, usersDatabase);
+  res.cookie('user_id', user.id).redirect("/urls");
+});
 
 // logout and clear cookie
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/urls");
-})
+});
 
 // edit link
 app.post("/urls/:id", (req, res) => {
@@ -126,13 +143,13 @@ app.post("/urls/:id", (req, res) => {
   urlDatabase[id] = req.body.longURL;
 
   res.redirect("/urls");
-})
+});
 
 // delete link
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id]
+  delete urlDatabase[req.params.id];
   res.redirect('/urls');
-})
+});
 
 // getting urls.json file
 app.get("/urls.json", (req, res) => {
