@@ -52,7 +52,7 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-// urls path
+// get urls
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
@@ -100,7 +100,7 @@ app.post("/register", (req, res) => {
   res.cookie("user_id", newID).redirect("/urls");
 });
 
-// creating new urls
+// creating urls page
 app.post("/urls", (req, res) => {
   let newURL = generateRandomString();
   urlDatabase[newURL] = req.body.longURL;
@@ -125,10 +125,22 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
+app.get("/login", (req, res) => {
+  res.render("urls_login");
+})
+
 // get user login
 app.post("/login", (req, res) => {
   const user = emailLookUp(req.body.email, usersDatabase);
+
+  if (!user) {
+    return res.status(400).send("Invalid credentials");
+  }
+  if (user.password !== req.body.password) {
+    return res.status(400).send("Invalid credentials");
+  }
   res.cookie('user_id', user.id).redirect("/urls");
+  
 });
 
 // logout and clear cookie
