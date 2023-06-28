@@ -126,7 +126,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  res.render("urls_login");
+  res.render("urls_login", { user_id: req.cookies['user_id']});
 })
 
 // get user login
@@ -134,10 +134,10 @@ app.post("/login", (req, res) => {
   const user = emailLookUp(req.body.email, usersDatabase);
 
   if (!user) {
-    return res.status(400).send("Invalid credentials");
+    return res.status(403).send("Invalid credentials");
   }
   if (user.password !== req.body.password) {
-    return res.status(400).send("Invalid credentials");
+    return res.status(403).send("Invalid credentials");
   }
   res.cookie('user_id', user.id).redirect("/urls");
   
@@ -146,7 +146,7 @@ app.post("/login", (req, res) => {
 // logout and clear cookie
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 // edit link
