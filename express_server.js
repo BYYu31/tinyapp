@@ -67,7 +67,12 @@ app.get("/urls/new", (req, res) => {
   const templateVars = {
     users: usersDatabase, user_id: req.cookies['user_id']
   };
-  res.render("urls_new", templateVars);
+  if (req.cookies['user_id']) {
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect('/login');
+  }
+  
 });
 
 // getting register link
@@ -76,7 +81,11 @@ app.get("/register", (req, res) => {
     users: usersDatabase,
     user_id: req.cookies['user_id']
   };
-  res.render("urls_register", templateVars);
+  if (req.cookies['user_id']) {
+    res.redirect("/urls");
+  } else {
+    res.render("urls_register", templateVars);
+  }
 });
 
 // post to register endpoint
@@ -104,12 +113,20 @@ app.post("/register", (req, res) => {
 app.post("/urls", (req, res) => {
   let newURL = generateRandomString();
   urlDatabase[newURL] = req.body.longURL;
-  res.redirect(`/urls/${newURL}`);
+  console.log("result is: " + req.cookies['user_id']);
+  if (req.cookies['user_id']) {
+    res.redirect(`/urls/${newURL}`);
+  } else {
+    res.send("Please login to use this function.");
+  }
 });
 
 // getting urls with specific id
 app.get("/urls/:id", (req,res) => {
   let id = req.params.id;
+  if (!urlDatabase[id]) {
+    res.send("this short url doesn't exist yet");
+  }
   const templateVars = {
     id: id,
     longURL: urlDatabase[id],
@@ -126,7 +143,11 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  res.render("urls_login", { user_id: req.cookies['user_id']});
+  if (req.cookies['user_id']) {
+    res.redirect("/urls");
+  } else {
+    res.render("urls_login", { user_id: req.cookies['user_id']});
+  }
 })
 
 // get user login
