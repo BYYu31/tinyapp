@@ -7,6 +7,7 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// helper functions
 // generate random 6 digit code
 function generateRandomString() {
   const alphanumeric = 'abcdefghijklmnopkrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTYUVWXYZ';
@@ -18,10 +19,38 @@ function generateRandomString() {
   return result;
 }
 
+// return URLs if userID equals to the id of the current logged-in user
+
+function urlsForUser(checkUser, usersInformation) {
+  let result = {...usersInformation};
+  for (const user in usersInformation) {
+    if (usersInformation[user].userID !== checkUser) {
+      delete result[user];
+    } 
+  }
+  return result;
+}
+
+// helper function - email lookup
+
+const emailLookUp = (email, dataBase) => {
+  for (let user in dataBase) {
+    if (dataBase[user].email === email) {
+      return dataBase[user];
+    }
+  }
+};
+
 // database
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "aJ48lW"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "aJ48lW"
+  }
 };
 
 const usersDatabase = {
@@ -37,15 +66,7 @@ const usersDatabase = {
   },
 };
 
-// helper function - email lookup
 
-const emailLookUp = (email, dataBase) => {
-  for (let user in dataBase) {
-    if (dataBase[user].email === email) {
-      return dataBase[user];
-    }
-  }
-};
 
 // home path
 app.get("/", (req, res) => {
@@ -54,12 +75,18 @@ app.get("/", (req, res) => {
 
 // get urls
 app.get("/urls", (req, res) => {
+  const filteredURL = urlsForUser(req.cookies['user_id'], urlDatabase);
   const templateVars = {
-    urls: urlDatabase,
+    urls: filteredURL,
     users: usersDatabase,
     user_id: req.cookies['user_id']
   };
-  res.render("urls_index", templateVars);
+  if (req.cookies['user_id']) {
+    res.render("urls_index", templateVars);
+  } else {
+    res.send('Please log in')
+  }
+  
 });
 
 // getting new urls
@@ -104,18 +131,19 @@ app.post("/register", (req, res) => {
     email: req.body.email,
     password: req.body.password
   };
-
-  console.log(usersDatabase);
   res.cookie("user_id", newID).redirect("/urls");
 });
 
 // creating urls page
 app.post("/urls", (req, res) => {
   let newURL = generateRandomString();
-  urlDatabase[newURL] = req.body.longURL;
-  console.log("result is: " + req.cookies['user_id']);
   if (req.cookies['user_id']) {
+    urlDatabase[newURL] = {
+      userID: req.cookies['user_id'],
+      longURL: req.body.longURL
+    }
     res.redirect(`/urls/${newURL}`);
+    console.log(usersDatabase);
   } else {
     res.send("Please login to use this function.");
   }
@@ -124,12 +152,20 @@ app.post("/urls", (req, res) => {
 // getting urls with specific id
 app.get("/urls/:id", (req,res) => {
   let id = req.params.id;
-  if (!urlDatabase[id]) {
+  const filteredULR = urlsForUser(req.cookies['user_id'], urlDatabase);
+
+  if (!req.cookies['user_id']) {
+    res.send('Please log in first');
+  }
+  if (!filteredULR[id]) {
+    res.send('this is not your link yo!');
+  }
+  if (!urlDatabase[id].longURL) {
     res.send("this short url doesn't exist yet");
   }
   const templateVars = {
     id: id,
-    longURL: urlDatabase[id],
+    longURL: urlDatabase[id].longURL,
     users: usersDatabase,
     user_id: req.cookies['user_id']
   };
@@ -138,7 +174,7 @@ app.get("/urls/:id", (req,res) => {
 
 // go to /u page with specific id
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 
@@ -173,15 +209,26 @@ app.post("/logout", (req, res) => {
 // edit link
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
-  urlDatabase[id] = req.body.longURL;
+  const filteredULR = urlsForUser(req.cookies['user_id'], urlDatabase);
+  if (filteredULR[id]) {
+    urlDatabase[id].longURL = req.body.longURL;
+    res.redirect("/urls");
+  } else {
+    res.send("don't EDIT cuz it's not your link!")
+  }
 
-  res.redirect("/urls");
 });
 
 // delete link
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect('/urls');
+  const id = req.params.id;
+  const filteredULR = urlsForUser(req.cookies['user_id'], urlDatabase);
+  if (filteredULR[id]) {
+    delete urlDatabase[req.params.id];
+    res.redirect('/urls');
+  } else {
+    res.send("don't DELETE cuz it's not your link!");
+  }
 });
 
 // getting urls.json file
