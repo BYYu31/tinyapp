@@ -1,6 +1,7 @@
 const express = require("express");
 //const cookieParser = require('cookie-parser');
 const session = require("cookie-session");
+const { getUserByEmail } = require("./helpers");
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
@@ -37,16 +38,6 @@ function urlsForUser(checkUser, usersInformation) {
   }
   return result;
 }
-
-// helper function - email lookup
-
-const emailLookUp = (email, dataBase) => {
-  for (let user in dataBase) {
-    if (dataBase[user].email === email) {
-      return dataBase[user];
-    }
-  }
-};
 
 // database
 const urlDatabase = {
@@ -127,7 +118,7 @@ app.post("/register", (req, res) => {
   if (!req.body.email || !req.body.password) {
     return res.status(400).send('Please provide valid email and password');
   }
-  if (emailLookUp(req.body.email, usersDatabase)) {
+  if (getUserByEmail(req.body.email, usersDatabase)) {
     return res.status(400).send(`${req.body.email} is in use.`);
   }
   let newID = generateRandomString();
@@ -196,7 +187,7 @@ app.get("/login", (req, res) => {
 
 // get user login
 app.post("/login", (req, res) => {
-  const user = emailLookUp(req.body.email, usersDatabase);
+  const user = getUserByEmail(req.body.email, usersDatabase);
 
   if (!user) {
     res.status(403).send("Invalid credentials");
