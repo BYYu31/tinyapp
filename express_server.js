@@ -1,45 +1,20 @@
 const express = require("express");
-//const cookieParser = require('cookie-parser');
 const session = require("cookie-session");
-const { getUserByEmail } = require("./helpers");
+const { getUserByEmail,generateRandomString, urlsForUser } = require("./helpers");
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-//app.use(cookieParser());
 app.use(session({
   name: 'user_id',
   keys: ['mySuperComplicatedText', 'Woopwoopisthedog','narutoBleachOnePieceShonenJump'],
   maxAge: 24 * 60 * 60 * 1000
-}))
+}));
 
-// helper functions
-// generate random 6 digit code
-function generateRandomString() {
-  const alphanumeric = 'abcdefghijklmnopkrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTYUVWXYZ';
-  let result = '';
-  
-  for (let i = 0; i < 6; i ++) {
-    result += alphanumeric[Math.floor(Math.random() * alphanumeric.length)];
-  }
-  return result;
-}
 
-// return URLs if userID equals to the id of the current logged-in user
-
-function urlsForUser(checkUser, usersInformation) {
-  let result = {...usersInformation};
-  for (const user in usersInformation) {
-    if (usersInformation[user].userID !== checkUser) {
-      delete result[user];
-    } 
-  }
-  return result;
-}
-
-// database
+// url database
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
@@ -51,6 +26,7 @@ const urlDatabase = {
   }
 };
 
+// user database
 const usersDatabase = {
   userRandomID: {
     id: "userRandomID",
@@ -82,7 +58,7 @@ app.get("/urls", (req, res) => {
   if (req.session['user_id']) {
     res.render("urls_index", templateVars);
   } else {
-    res.send('Please log in')
+    res.send('Please log in');
   }
   
 });
@@ -140,9 +116,8 @@ app.post("/urls", (req, res) => {
     urlDatabase[newURL] = {
       userID: req.session['user_id'],
       longURL: req.body.longURL
-    }
+    };
     res.redirect(`/urls/${newURL}`);
-    console.log(usersDatabase);
   } else {
     res.send("Please login to use this function.");
   }
@@ -177,13 +152,14 @@ app.get("/u/:id", (req, res) => {
   res.redirect(longURL);
 });
 
+// go to login page
 app.get("/login", (req, res) => {
   if (req.session['user_id']) {
     res.redirect("/urls");
   } else {
     res.render("urls_login", { user_id: req.session['user_id']});
   }
-})
+});
 
 // get user login
 app.post("/login", (req, res) => {
@@ -198,7 +174,7 @@ app.post("/login", (req, res) => {
   } else {
     req.session.user_id = user.id;
     res.redirect("/urls");
-  } 
+  }
 });
 
 // logout and clear cookie
@@ -215,7 +191,7 @@ app.post("/urls/:id", (req, res) => {
     urlDatabase[id].longURL = req.body.longURL;
     res.redirect("/urls");
   } else {
-    res.send("don't EDIT cuz it's not your link!")
+    res.send("don't EDIT cuz it's not your link!");
   }
 
 });
@@ -237,6 +213,7 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// home
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
